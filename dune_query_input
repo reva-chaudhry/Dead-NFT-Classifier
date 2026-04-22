@@ -1,0 +1,46 @@
+-- This is a Dune SQL query to identify and collect information on large-scale, non-infrastructure NFT projects between feb 2021 - sep 2023 that had a full life-cycle
+-- output is used as the input for socials_nfts.py, which scrapes twitter/discord handles from opensea
+
+WITH large_collections AS (
+    -- Filter by Time, Size, and Infrastructure
+    SELECT 
+        nft_contract_address, 
+        collection, 
+        token_standard,
+        min(block_time) as first_mint_time,
+        count(distinct token_id) as token_count
+    FROM nft.mints as m
+    WHERE blockchain = 'ethereum'
+      AND block_time >= timestamp '2021-02-01'
+      AND block_time <= timestamp '2023-09-30'
+      AND m.nft_contract_address NOT IN (
+          from_hex('0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85'), -- ENS registrar
+          from_hex('0x0000000000664ceffed39244a8312bd895470803'), -- Infrastructure/Utility
+          from_hex('0x00000000000000adc04c56bf30ac9d3c0aaf14dc'), -- Seaport
+          from_hex('0x495f947276749ce646f68ac8c248420045cb7b5e')  -- OpenSea Shared Storefront
+      )
+    GROUP BY 1, 2, 3
+    HAVING count(distinct token_id) > 9999
+)
+
+SELECT 
+    lc.nft_contract_address as contract_address,
+    'https://opensea.io/assets/ethereum/' || cast(lc.nft_contract_address as varchar) as opensea_link,
+    lc.collection as name,
+    lc.token_standard as standard,
+    lc.first_mint_time, -- Mint time is bounded to feb 2021 which is not neccessarily accurate. Manually edited this for The Flatline Gallery. 
+    lc.token_count,
+    count(distinct t.tx_hash) as total_sales,
+    max(t.block_time) as last_sale_time,
+    sum(t.amount_usd) as volume_usd_all_time
+FROM large_collections lc
+LEFT JOIN nft.trades t 
+    ON t.nft_contract_address = lc.nft_contract_address
+    AND t.blockchain = 'ethereum'
+    AND t.block_time >= lc.first_mint_time 
+GROUP BY 1, 2, 3, 4, 5, 6
+-- Step 2: Apply Market Activity Thresholds
+HAVING count(distinct t.tx_hash) > 50          -- Minimum trade frequency
+   AND sum(t.amount_usd) > 1000                -- Minimum economic volume
+   AND max(t.block_time) < timestamp '2024-01-01' -- Helps narrow down full life-cycle projects 
+ORDER BY lc.token_count DESC
