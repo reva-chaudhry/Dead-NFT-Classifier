@@ -19,14 +19,26 @@ Active metric categories:
   Social          — Twitter/Discord community signals
   Technical       — on-chain metadata integrity
   Ownership       — token concentration signals
+____________________________________________________________________________________________________________
 
-Removed metrics (never fired across 233-collection dataset, v11):
+These 5 additional metrics were originally included, but were removed in the final output because they
+never fired across 233-collection dataset:
   liq_unique_buyers_lt20pct_30d       — skipped 100%: no live 30d sales
+  - Unique buyers were less than 20% of total sales over the last 30 days.
+  
   fin_median_bid_lt30pct_floor        — skipped 100%: no floor on dead collections
+  - The median bid price was less than 30% of the current floor price.
+  
   inv_gt30pct_listings_near_floor     — skipped 75%, never triggered otherwise
+  - More than 30% of all listings were priced within 5% of the floor.
+  
   bot_wash_trading_gt40pct            — never triggered: wash detection needs
                                         active trading which dead collections lack
+  - More than 40% of volume was identified as wash trading.
+  
   own_gt50pct_trades_top_holders      — skipped 100%: no 30d trades to analyse
+  - More than 50% of recent trades involved the top 10% of holders.
+____________________________________________________________________________________________________________
 
 Verdict thresholds (applied to rescaled score out of 22):
   DEAD                  ≥ 11  (or ≥ 16 even with insufficient data)
