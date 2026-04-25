@@ -7,3 +7,5 @@ This list was used as an input for the socials_nfts.py script, which links the t
 using the free opeansea api.
 
 Finally, the output from the socials_nfts.py script was fed into nft_death_Score_analyzer.py, which scores each collection across five categories using active market data to confirm whether it is actually dead. 
+
+Please open each file to further understand the parameters and method used for each step.
